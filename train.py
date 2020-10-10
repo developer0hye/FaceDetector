@@ -18,7 +18,7 @@ parser.add_argument('--lr', default=1e-3, type=float,
                     help='initial learning rate')
 parser.add_argument('--total_epoch', type=int, default=200,
                     help='total_epoch')
-parser.add_argument('--dataset_root', default="FaceDetector/train",
+parser.add_argument('--dataset_root', default="train",
                     help='Location of dataset directory')
 parser.add_argument('--momentum', default=0.9, type=float,
                     help='Momentum value for optim')
