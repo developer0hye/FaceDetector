@@ -106,17 +106,11 @@ class LightWeightFaceDetector(nn.Module):
                                                   Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                   nn.Conv2d(256, 4, 1))
 
-        self.head_faceness = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+        self.head_classification = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                           nn.Conv2d(256, 1, 1))
-
-        self.head_classifcation = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                nn.Conv2d(256, self.num_classes, 1))
+                                           nn.Conv2d(256, 1 + self.num_classes, 1))
 
     def forward(self, x):
         input_img_h, input_img_w = x.shape[2:]
@@ -140,9 +134,8 @@ class LightWeightFaceDetector(nn.Module):
 
         for P, detection_layer in zip([P3, P4, P5], self.detection_layers):
             P_bbox_regression = self.head_bbox_regression(P)
-            P_faceness = self.head_faceness(P)
-            P_classification = self.head_classifcation(P)
-            P = torch.cat([P_bbox_regression, P_faceness, P_classification], dim=1)
+            P_classification = self.head_classification(P)
+            P = torch.cat([P_bbox_regression, P_classification], dim=1)
 
             batch_single_scale_raw_bboxes, batch_single_scale_bboxes = detection_layer(P,
                                                                                        input_img_w,
@@ -323,7 +316,7 @@ if __name__ == '__main__':
     epochs = 200
     lr = 1e-3
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-    
+    lr_scehduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, epochs, eta_min=1e-4)
     iteration = 0
     for epoch in range(epochs):
         print("epoch: ", epoch)
@@ -359,6 +352,12 @@ if __name__ == '__main__':
 
                 print('postive objs(>= 0.5): ', len(torch.nonzero(positive_samples[:, 4] > 0.5)))
                 print('loss: ', loss)
+
+        lr_scehduler.step()
+
+        for param_group in optimizer.param_groups:
+            print("lr: ", param_group['lr'])
+            break
 
         if epoch % 10 != 0:
           continue
