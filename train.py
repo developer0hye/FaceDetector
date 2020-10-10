@@ -83,17 +83,6 @@ def train(model, device):
     iteration = 0
     start_epoch = 0
 
-    if args.weights is not None:
-        chkpt = torch.load(args.weights, map_location=device)
-
-        start_epoch = chkpt['epoch']
-        iteration = chkpt['iteration']
-        chkpt['model'] = {k: v for k, v in chkpt['model'].items() if model.state_dict()[k].numel() == v.numel()}
-        chkpt['optimizer'] = {k: v for k, v in chkpt['optimizer'].items()}
-
-        model.load_state_dict(chkpt['model'], strict=False)
-        optimizer.load_state_dict(chkpt['optimizer'])
-
 # start training
     for epoch in range(start_epoch, args.total_epoch):
         model.train()
