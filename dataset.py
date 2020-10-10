@@ -49,13 +49,13 @@ class DatasetReader(Dataset):
 
         classes, bboxes_xywh = label[:, 0:1], label[:, 1:]
 
-        # if self.use_augmentation:
-        #     img, bboxes_xywh = augmentation.HorFlip(img, bboxes_xywh)
-        #     bboxes_xyxy = augmentation.xywh2xyxy(bboxes_xywh)
-        #     img, bboxes_xyxy, classes = augmentation.RandomCrop(img, bboxes_xyxy, classes)
-        #     img, bboxes_xyxy, classes = augmentation.RandomTranslation(img, bboxes_xyxy, classes)
-        #     img, bboxes_xyxy, classes = augmentation.RandomScale(img, bboxes_xyxy, classes)
-        #     bboxes_xywh = augmentation.xyxy2xywh(bboxes_xyxy)
+        if self.use_augmentation:
+            img, bboxes_xywh = augmentation.HorFlip(img, bboxes_xywh)
+            bboxes_xyxy = augmentation.xywh2xyxy(bboxes_xywh)
+            img, bboxes_xyxy, classes = augmentation.RandomCrop(img, bboxes_xyxy, classes)
+            img, bboxes_xyxy, classes = augmentation.RandomTranslation(img, bboxes_xyxy, classes)
+            img, bboxes_xyxy, classes = augmentation.RandomScale(img, bboxes_xyxy, classes)
+            bboxes_xywh = augmentation.xyxy2xywh(bboxes_xyxy)
 
         classes = torch.from_numpy(classes)
         bboxes_xywh = torch.from_numpy(bboxes_xywh)
