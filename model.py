@@ -84,7 +84,7 @@ class LightWeightFaceDetector(nn.Module):
         self.strides = strides
 
         self.backbone = rexnetv1.ReXNetV1(width_mult=1.0)
-        self.backbone.load_state_dict(torch.load('rexnetv1_1.0x.pth'))
+        self.backbone.load_state_dict(torch.load('FaceDetector/rexnetv1_1.0x.pth'))
         for p in self.backbone.parameters():
             p.requires_grad = False
 
@@ -123,9 +123,7 @@ class LightWeightFaceDetector(nn.Module):
 
         multi_scale_features = []
         for idx_layer, layer in enumerate(self.backbone.features[:-1]):
-            print(x.shape)
             x = layer(x)
-
             if idx_layer in [7, 13, 21]:
                 multi_scale_features.append(x.clone())
 
@@ -306,13 +304,13 @@ def yololoss(preds, targets):
 
 
 if __name__ == '__main__':
-    model = LightWeightFaceDetector()
+    model = LightWeightFaceDetector().cuda()
     torch.save(model.state_dict(), "mem_check.pth")
 
     import dataset
     import torch.utils.data as data
 
-    train_dataset = dataset.DatasetReader(dataset_path="example",
+    train_dataset = dataset.DatasetReader(dataset_path="train",
                                           use_augmentation=True)
 
     data_loader = data.DataLoader(train_dataset, 2,
@@ -322,32 +320,47 @@ if __name__ == '__main__':
                                   pin_memory=True,
                                   drop_last=False)
 
-    epochs = 100
+    epochs = 200
     lr = 1e-3
-    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr)
 
     for epoch in range(epochs):
         print("epoch: ", epoch)
         model.train()
-        #
-        # if epoch == 10:
+        
+        # if epoch == 30:
         #     for p in model.backbone.parameters():
         #         p.requires_grad = True
-        #
+        
         for img, batch_target_bboxes, inds in data_loader:
+            img = img.cuda()
             batch_multi_scale_raw_bboxes, batch_multi_scale_bboxes = model(img)
 
             targets = tools.build_target_tensor(model=model,
                                                 batch_pred_bboxes=batch_multi_scale_bboxes,
                                                 batch_target_bboxes=batch_target_bboxes,
                                                 input_size=(384, 384))
-
+            targets = targets.cuda()
             loss = yololoss(batch_multi_scale_raw_bboxes, targets)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
+            if epoch % 10 == 0:
+                positive_samples = batch_multi_scale_bboxes[torch.sum(targets[..., 5:], dim=-1) == 1]
+                negative_samples = batch_multi_scale_bboxes[torch.sum(targets[..., 5:], dim=-1) == 0]
+
+                print(' ')
+                print('positive mean obj ', (positive_samples[:, 4]).mean())
+                print('negative mean obj ', (negative_samples[:, 4]).mean())
+
+                print('postive objs(>= 0.5): ', len(torch.nonzero(positive_samples[:, 4] > 0.5)))
+                print('loss: ', loss)
+
+        if epoch % 10 != 0:
+          continue
+        
         model.eval()
         with torch.no_grad():
             # https://discuss.pytorch.org/t/performance-highly-degraded-when-eval-is-activated-in-the-test-phase/3323/43
@@ -355,20 +368,20 @@ if __name__ == '__main__':
             #     if isinstance(m, nn.BatchNorm2d):
             #         m.track_running_stats = False
 
-            img = cv2.imread("example/img/3.8.jpg")
+            img = cv2.imread("FaceDetector/example/img/3.8.jpg")
             img = cv2.resize(img, (384, 384))
             img = img[:, :, (2, 1, 0)]
             img = torch.from_numpy(img).permute(2, 0, 1).contiguous()
             img = img / 255.
             img = transforms.Normalize(mean=[0.575, 0.533, 0.507], std=[0.235, 0.232, 0.233])(img)
             img = img.unsqueeze(0)
-
+            img = img.cuda()
             _, batch_multi_scale_bboxes = model(img)
 
             filtered_batch_multi_scale_bboxes = bboxes_filtering(batch_multi_scale_bboxes)
             filtered_single_multi_scale_bboxes = filtered_batch_multi_scale_bboxes[0]
 
-            img_draw = cv2.imread("example/img/3.8.jpg")
+            img_draw = cv2.imread("FaceDetector/example/img/3.8.jpg")
             img_h, img_w = img_draw.shape[:2]
 
             for idx in range(len(filtered_single_multi_scale_bboxes['position'])):
@@ -387,6 +400,6 @@ if __name__ == '__main__':
                 cv2.rectangle(img=img_draw, pt1=(l, t), pt2=(r, b), color=(0, 255, 0))
 
                 print(bbox)
-            cv2.imshow('img', img_draw)
-            cv2.waitKey(30)
+            #cv2.imshow('img', img_draw)
+            cv2.imwrite('img'+str(epoch)+'.png', img_draw)
             print(len(filtered_single_multi_scale_bboxes['position']))
