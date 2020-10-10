@@ -8,8 +8,11 @@ To detect face and classify emotion
 
 The number of training images is 1,688.
 
-### Category(#num)
+### RGB Mean & Standard Deviation
+Mean: [0.5747293, 0.53332627, 0.5069782]
+Standard Deviation: [0.23505978, 0.23163822, 0.233239]
 
+### Category(#num)
 - Neutral(573)
 - Anger(379)
 - Surprise(226)
@@ -30,13 +33,12 @@ I set the input image size of the network to 384x384 via median width and height
 - Median Width: 83
 - Median Height: 108
 
+
 #### Visualizaiton
-
-
 
 
 ## Network
 
 ### Backbone Network
-I adopted RexNet to design a lightweight detector as backbone network.
+I adopted RexNet as backbone network to design a lightweight detector.
 
