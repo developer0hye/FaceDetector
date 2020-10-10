@@ -10,11 +10,11 @@ The number of training images is 1,688.
 
 ### Category(#num)
 
-- neutral(573)
-- anger(379)
-- surprise(226)
-- smile(627)
-- sad(311)
+- Neutral(573)
+- Anger(379)
+- Surprise(226)
+- Smile(627)
+- Sad(311)
 
 ### Image Resolution
 - Width Range: [113, 7296]
@@ -23,6 +23,17 @@ The number of training images is 1,688.
 - Median Height: 326
 
 I set the input image size of the network to 416x416 via median width and height.
+
+### Objects Size
+- Width Range: [18, 3668]
+- Height Range: [25, 3668]
+- Median Width: 83
+- Median Height: 108
+
+#### Visualizaiton
+
+
+
 
 ## Network
 
