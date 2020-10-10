@@ -2,7 +2,7 @@
 
 ## Task
 
-To detect face and classify emotion from face
+To detect face and classify emotion
 
 ## Dataset 
 
