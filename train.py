@@ -134,19 +134,20 @@ def train(model, device):
                       optimizer.param_groups[0]['lr']) + ' || input size: %d ||' %
                       input_size[0], end=' ')
 
-        lr_scheduler.step(iteration)
-
-        chkpt = {'epoch': epoch + 1,
-                 'iteration': iteration,
-                 'model': model.state_dict(),
-                 'optimizer': optimizer.state_dict()}
-
-        print('Saving state, epoch:', epoch + 1)
+        lr_scheduler.step()
 
         if epoch >= 50:
-            torch.save(chkpt,
-                       args.save_folder + '/' + 'nota_face_detector' + '_' +
-                       repr(epoch + 1) + '.pth')
+          chkpt = {'epoch': epoch + 1,
+                  'iteration': iteration,
+                  'model': model.state_dict(),
+                  'optimizer': optimizer.state_dict()}
+
+          print('Saving state, epoch:', epoch + 1)
+
+          
+          torch.save(chkpt,
+                      args.save_folder + '/' + 'nota_face_detector' + '_' +
+                      repr(epoch + 1) + '.pth')
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
