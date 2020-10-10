@@ -201,7 +201,7 @@ def bboxes_filtering(batch_multi_scale_bboxes):
         num_classes = single_multi_scale_bboxes[:, 5:].shape[-1]
 
         confidence = objectness * class_prob
-        is_postive = confidence > 1e-4
+        is_postive = confidence > 0.5
 
         position = single_multi_scale_bboxes[is_postive, :4]
         confidence, class_idx = confidence[is_postive], class_idx[is_postive]
@@ -310,10 +310,10 @@ if __name__ == '__main__':
     import dataset
     import torch.utils.data as data
 
-    train_dataset = dataset.DatasetReader(dataset_path="train",
+    train_dataset = dataset.DatasetReader(dataset_path="FaceDetector/example",
                                           use_augmentation=True)
 
-    data_loader = data.DataLoader(train_dataset, 2,
+    data_loader = data.DataLoader(train_dataset, 32,
                                   num_workers=1,
                                   shuffle=False,
                                   collate_fn=dataset.yolo_collate,
@@ -323,16 +323,18 @@ if __name__ == '__main__':
     epochs = 200
     lr = 1e-3
     optimizer = torch.optim.SGD(model.parameters(), lr=lr)
-
+    
+    iteration = 0
     for epoch in range(epochs):
         print("epoch: ", epoch)
         model.train()
         
-        # if epoch == 30:
-        #     for p in model.backbone.parameters():
-        #         p.requires_grad = True
+        if epoch == 10:
+            for p in model.backbone.parameters():
+                p.requires_grad = True
         
         for img, batch_target_bboxes, inds in data_loader:
+            iteration += 1
             img = img.cuda()
             batch_multi_scale_raw_bboxes, batch_multi_scale_bboxes = model(img)
 
@@ -347,7 +349,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
 
-            if epoch % 10 == 0:
+            if iteration % 10 == 0:
                 positive_samples = batch_multi_scale_bboxes[torch.sum(targets[..., 5:], dim=-1) == 1]
                 negative_samples = batch_multi_scale_bboxes[torch.sum(targets[..., 5:], dim=-1) == 0]
 
