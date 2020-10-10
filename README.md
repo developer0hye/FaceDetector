@@ -22,7 +22,7 @@ The number of training images is 1,688.
 - Median Width: 400
 - Median Height: 326
 
-I set the input image size of the network to 416x416 via median width and height.
+I set the input image size of the network to 384x384 via median width and height.
 
 ### Objects Size
 - Width Range: [18, 3668]
