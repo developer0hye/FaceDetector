@@ -1,0 +1,26 @@
+<annotation>
+	<folder>re_img</folder>
+	<filename>7.depositphotos_194703446-stock-video-portrait-of-irritated-asian-man.jpg</filename>
+	
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>608</width>
+		<height>342</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>anger</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>283</xmin>
+			<ymin>73</ymin>
+			<xmax>361</xmax>
+			<ymax>180</ymax>
+		</bndbox>
+	</object>
+</annotation>

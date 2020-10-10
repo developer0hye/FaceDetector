@@ -1,0 +1,26 @@
+<annotation>
+	<folder>re_img</folder>
+	<filename>2.https%3A%2F%2Fblogs-images.forbes.com%2Fgoldiechan%2Ffiles%2F2019%2F06%2FCU_Phil-Yu_Large.jpg</filename>
+	
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>960</width>
+		<height>444</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>anger</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>338</xmin>
+			<ymin>87</ymin>
+			<xmax>526</xmax>
+			<ymax>344</ymax>
+		</bndbox>
+	</object>
+</annotation>

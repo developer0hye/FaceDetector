@@ -1,0 +1,26 @@
+<annotation>
+	<folder>re_img</folder>
+	<filename>12.130815_520c3f89eb338.jpg</filename>
+	
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>500</width>
+		<height>274</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>sad</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>242</xmin>
+			<ymin>52</ymin>
+			<xmax>371</xmax>
+			<ymax>217</ymax>
+		</bndbox>
+	</object>
+</annotation>

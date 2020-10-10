@@ -1,0 +1,26 @@
+<annotation>
+	<folder>re_img</folder>
+	<filename>6.happy-asian-woman_12338-221.jpg</filename>
+	
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>626</width>
+		<height>417</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>smile</name>
+		<pose>Unspecified</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<bndbox>
+			<xmin>396</xmin>
+			<ymin>49</ymin>
+			<xmax>497</xmax>
+			<ymax>188</ymax>
+		</bndbox>
+	</object>
+</annotation>
