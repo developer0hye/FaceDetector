@@ -12,7 +12,7 @@ from model import *
 import tools
 
 parser = argparse.ArgumentParser(description='YOLO-v3 tiny Detection')
-parser.add_argument('--batch_size', default=64, type=int,
+parser.add_argument('--batch_size', default=32, type=int,
                     help='Batch size for training')
 parser.add_argument('--lr', default=1e-3, type=float,
                     help='initial learning rate')
@@ -88,8 +88,8 @@ def train(model, device):
         model.train()
 
         if epoch == 10:
-            for p in model.backbone.parameters():
-                p.requires_grad = True
+          for p in model.backbone.parameters():
+              p.requires_grad = True
 
         for batch_imgs, batch_target_bboxes, inds in data_loader:
             iteration += 1
@@ -147,7 +147,7 @@ def train(model, device):
           
           torch.save(chkpt,
                       args.save_folder + '/' + 'nota_face_detector' + '_' +
-                      repr(epoch + 1) + '.pth')
+                      str(epoch + 1) + '.pth')
 
 if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
