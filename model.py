@@ -394,7 +394,6 @@ if __name__ == '__main__':
             img_draw = cv2.imread("FaceDetector/example/img/1.1.jpg")
             img_h, img_w = img_draw.shape[:2]
 
-            
             for idx in range(len(filtered_single_multi_scale_bboxes['position'])):
                 bbox = filtered_single_multi_scale_bboxes['position'][idx]
                 bbox[[0, 2]] *= img_w
