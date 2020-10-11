@@ -230,12 +230,12 @@ def bboxes_filtering(batch_multi_scale_bboxes):
             box_xyxy[..., 3] = box_xywh[..., 1] + box_xywh[..., 3] / 2.
             return box_xyxy
 
-        # NMS-per face not class
+        # NMS per face not class
         keep = np.zeros(len(position), dtype=np.int)
 
         inds = np.arange(len(class_idx))
         if len(inds) != 0:
-            c_keep = nms(xywh2xyxy(position), confidence, 0.3)
+            c_keep = nms(xywh2xyxy(position), confidence, 0.25)
             keep[inds[c_keep]] = 1
 
         keep = np.where(keep > 0)
