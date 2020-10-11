@@ -95,29 +95,35 @@ class LightWeightFaceDetector(nn.Module):
                 self.detection_layers.append(Detection(anchor_wh=anchor_wh))
 
         self.pyramid_s32 = Conv_BN_LeakyReLU(1280, 256, 1)
+        #self.refine_s32 = Conv_BN_LeakyReLU(256, 256, 3, 1)
 
         self.refine_s16 = Conv_BN_LeakyReLU(128, 256, 3, 1)
-        self.pyramid_s16 = Conv_BN_LeakyReLU(256, 256, 3, 1)
+        #self.pyramid_s16 = Conv_BN_LeakyReLU(256, 256, 3, 1)
         
         self.refine_s8 = Conv_BN_LeakyReLU(61, 256, 3, 1)
-        self.pyramid_s8 = Conv_BN_LeakyReLU(256, 256, 3, 1)
+       # self.pyramid_s8 = Conv_BN_LeakyReLU(256, 256, 3, 1)
         
 
-        self.upsample = nn.Upsample(scale_factor=(2, 2), mode='bilinear')
+        self.upsample = nn.Upsample(scale_factor=(2, 2), mode='nearest')
         
         #I used shared convolution layers to reduce the number of parameters.
         self.bbox_regression = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                             Conv_BN_LeakyReLU(256, 256, 3, 1),
                                             nn.Conv2d(256, 4, 1))
-        self.head_bbox_classification = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                  Conv_BN_LeakyReLU(256, 256, 3, 1))
+
+        self.bbox_classification = nn.ModuleList([nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            nn.Conv2d(256, 1+self.num_classes, 1)),
+                                            nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            nn.Conv2d(256, 1+self.num_classes, 1)),
+                                            nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            nn.Conv2d(256, 1+self.num_classes, 1))])
         
         #To use shared convolution layers for classification significantly dropped the performance.
         #So I mixed shared convolution layers(head) and not shared convolution layers(tail) for classification.
-        
-        self.tail_bbox_classification_list = nn.ModuleList([nn.Conv2d(256, 1 + self.num_classes, 1),
-        nn.Conv2d(256, 1 + self.num_classes, 1),
-        nn.Conv2d(256, 1 + self.num_classes, 1)])
+
 
     def forward(self, x):
         input_img_h, input_img_w = x.shape[2:]
@@ -134,15 +140,15 @@ class LightWeightFaceDetector(nn.Module):
         
         #generate feature pyramid
         P5 = self.pyramid_s32(C5)
-        P4 = self.pyramid_s16(self.refine_s16(C4) + self.upsample(P5))
-        P3 = self.pyramid_s8(self.refine_s8(C3) + self.upsample(P4))
+        P4 = self.refine_s16(C4) + self.upsample(P5)
+        P3 = self.refine_s8(C3) + self.upsample(P4)
 
         batch_multi_scale_raw_bboxes = []  # for training
         batch_multi_scale_bboxes = []  # for inference
 
-        for P, detection_layer, tail_classification in zip([P3, P4, P5], self.detection_layers, self.tail_bbox_classification_list):
+        for P, detection_layer, bbox_classification in zip([P3, P4, P5], self.detection_layers, self.bbox_classification):
             P_bbox_regression = self.bbox_regression(P)
-            P_classification = tail_classification(self.head_bbox_classification(P))
+            P_classification = bbox_classification(P)
             P = torch.cat([P_bbox_regression, P_classification], dim=1)
             
             #generate features for training and inference bounding boxes
@@ -372,7 +378,7 @@ if __name__ == '__main__':
             #     if isinstance(m, nn.BatchNorm2d):
             #         m.track_running_stats = False
 
-            img = cv2.imread("/FaceDetector/example/img/3.8.jpg")
+            img = cv2.imread("FaceDetector/example/img/1.1.jpg")
             img = cv2.resize(img, (384, 384))
             img = img[:, :, (2, 1, 0)]
             img = torch.from_numpy(img).permute(2, 0, 1).contiguous()
@@ -385,7 +391,7 @@ if __name__ == '__main__':
             filtered_batch_multi_scale_bboxes = bboxes_filtering(batch_multi_scale_bboxes)
             filtered_single_multi_scale_bboxes = filtered_batch_multi_scale_bboxes[0]
 
-            img_draw = cv2.imread("/FaceDetector/example/img/3.8.jpg")
+            img_draw = cv2.imread("FaceDetector/example/img/1.1.jpg")
             img_h, img_w = img_draw.shape[:2]
 
             for idx in range(len(filtered_single_multi_scale_bboxes['position'])):
