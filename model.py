@@ -104,14 +104,17 @@ class LightWeightFaceDetector(nn.Module):
         
 
         self.upsample = nn.Upsample(scale_factor=(2, 2), mode='bilinear')
-
+        
+        #I used shared convolution layers to reduce the number of parameters.
         self.bbox_regression = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                             Conv_BN_LeakyReLU(256, 256, 3, 1),
                                             nn.Conv2d(256, 4, 1))
-
         self.head_bbox_classification = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                   Conv_BN_LeakyReLU(256, 256, 3, 1))
-
+        
+        #To use shared convolution layers for classification significantly dropped the performance.
+        #So I mixed shared convolution layers(head) and not shared convolution layers(tail) for classification.
+        
         self.tail_bbox_classification_list = nn.ModuleList([nn.Conv2d(256, 1 + self.num_classes, 1),
         nn.Conv2d(256, 1 + self.num_classes, 1),
         nn.Conv2d(256, 1 + self.num_classes, 1)])
@@ -128,7 +131,8 @@ class LightWeightFaceDetector(nn.Module):
         C5 = multi_scale_features[-1]
         C4 = multi_scale_features[-2]
         C3 = multi_scale_features[-3]
-
+        
+        #generate feature pyramid
         P5 = self.pyramid_s32(C5)
         P4 = self.pyramid_s16(self.refine_s16(C4) + self.upsample(P5))
         P3 = self.pyramid_s8(self.refine_s8(C3) + self.upsample(P4))
@@ -140,6 +144,8 @@ class LightWeightFaceDetector(nn.Module):
             P_bbox_regression = self.bbox_regression(P)
             P_classification = tail_classification(self.head_bbox_classification(P))
             P = torch.cat([P_bbox_regression, P_classification], dim=1)
+            
+            #generate features for training and inference bounding boxes
             batch_single_scale_raw_bboxes, batch_single_scale_bboxes = detection_layer(P,
                                                                                        input_img_w,
                                                                                        input_img_h)
@@ -212,7 +218,7 @@ def bboxes_filtering(batch_multi_scale_bboxes):
             box_xyxy[..., 3] = box_xywh[..., 1] + box_xywh[..., 3] / 2.
             return box_xyxy
 
-        # NMS, 클래스 단위로 하지 않고 "얼굴"단위로
+        # NMS-per face not class
         keep = np.zeros(len(position), dtype=np.int)
 
         inds = np.arange(len(class_idx))
