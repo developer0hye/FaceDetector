@@ -95,22 +95,26 @@ class LightWeightFaceDetector(nn.Module):
                 self.detection_layers.append(Detection(anchor_wh=anchor_wh))
 
         self.pyramid_s32 = Conv_BN_LeakyReLU(1280, 256, 1)
-        self.pyramid_s16 = Conv_BN_LeakyReLU(128, 256, 3, 1)
-        self.pyramid_s8 = Conv_BN_LeakyReLU(61, 256, 3, 1)
 
-        self.upsample = nn.Upsample(scale_factor=(2, 2), mode='nearest')
+        self.refine_s16 = Conv_BN_LeakyReLU(128, 256, 3, 1)
+        self.pyramid_s16 = Conv_BN_LeakyReLU(256, 256, 3, 1)
+        
+        self.refine_s8 = Conv_BN_LeakyReLU(61, 256, 3, 1)
+        self.pyramid_s8 = Conv_BN_LeakyReLU(256, 256, 3, 1)
+        
 
-        self.head_bbox_regression = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                  Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                  Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                  Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                                  nn.Conv2d(256, 4, 1))
+        self.upsample = nn.Upsample(scale_factor=(2, 2), mode='bilinear')
 
-        self.head_classification = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                           Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                           Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                           Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                           nn.Conv2d(256, 1 + self.num_classes, 1))
+        self.bbox_regression = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                            nn.Conv2d(256, 4, 1))
+
+        self.head_bbox_classification = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                  Conv_BN_LeakyReLU(256, 256, 3, 1))
+
+        self.tail_bbox_classification_list = nn.ModuleList([nn.Conv2d(256, 1 + self.num_classes, 1),
+        nn.Conv2d(256, 1 + self.num_classes, 1),
+        nn.Conv2d(256, 1 + self.num_classes, 1)])
 
     def forward(self, x):
         input_img_h, input_img_w = x.shape[2:]
@@ -126,17 +130,16 @@ class LightWeightFaceDetector(nn.Module):
         C3 = multi_scale_features[-3]
 
         P5 = self.pyramid_s32(C5)
-        P4 = self.upsample(P5) + self.pyramid_s16(C4)
-        P3 = self.upsample(P4) + self.pyramid_s8(C3)
+        P4 = self.pyramid_s16(self.refine_s16(C4) + self.upsample(P5))
+        P3 = self.pyramid_s8(self.refine_s8(C3) + self.upsample(P4))
 
         batch_multi_scale_raw_bboxes = []  # for training
         batch_multi_scale_bboxes = []  # for inference
 
-        for P, detection_layer in zip([P3, P4, P5], self.detection_layers):
-            P_bbox_regression = self.head_bbox_regression(P)
-            P_classification = self.head_classification(P)
+        for P, detection_layer, tail_classification in zip([P3, P4, P5], self.detection_layers, self.tail_bbox_classification_list):
+            P_bbox_regression = self.bbox_regression(P)
+            P_classification = tail_classification(self.head_bbox_classification(P))
             P = torch.cat([P_bbox_regression, P_classification], dim=1)
-
             batch_single_scale_raw_bboxes, batch_single_scale_bboxes = detection_layer(P,
                                                                                        input_img_w,
                                                                                        input_img_h)
@@ -191,10 +194,8 @@ def bboxes_filtering(batch_multi_scale_bboxes):
         objectness = single_multi_scale_bboxes[:, 4]
         class_prob, class_idx = torch.max(single_multi_scale_bboxes[:, 5:], dim=1)
 
-        num_classes = single_multi_scale_bboxes[:, 5:].shape[-1]
-
         confidence = objectness * class_prob
-        is_postive = confidence > 0.5
+        is_postive = confidence > 0.1
 
         position = single_multi_scale_bboxes[is_postive, :4]
         confidence, class_idx = confidence[is_postive], class_idx[is_postive]
@@ -211,16 +212,12 @@ def bboxes_filtering(batch_multi_scale_bboxes):
             box_xyxy[..., 3] = box_xywh[..., 1] + box_xywh[..., 3] / 2.
             return box_xyxy
 
-        # NMS
+        # NMS, 클래스 단위로 하지 않고 "얼굴"단위로
         keep = np.zeros(len(position), dtype=np.int)
-        for i in range(num_classes):
-            inds = np.where(class_idx == i)[0]
-            if len(inds) == 0:
-                continue
 
-            c_bboxes = position[inds]
-            c_scores = confidence[inds]
-            c_keep = nms(xywh2xyxy(c_bboxes), c_scores, 0.45)
+        inds = np.arange(len(class_idx))
+        if len(inds) != 0:
+            c_keep = nms(xywh2xyxy(position), confidence, 0.3)
             keep[inds[c_keep]] = 1
 
         keep = np.where(keep > 0)
@@ -369,7 +366,7 @@ if __name__ == '__main__':
             #     if isinstance(m, nn.BatchNorm2d):
             #         m.track_running_stats = False
 
-            img = cv2.imread("FaceDetector/example/img/3.8.jpg")
+            img = cv2.imread("/FaceDetector/example/img/3.8.jpg")
             img = cv2.resize(img, (384, 384))
             img = img[:, :, (2, 1, 0)]
             img = torch.from_numpy(img).permute(2, 0, 1).contiguous()
@@ -382,7 +379,7 @@ if __name__ == '__main__':
             filtered_batch_multi_scale_bboxes = bboxes_filtering(batch_multi_scale_bboxes)
             filtered_single_multi_scale_bboxes = filtered_batch_multi_scale_bboxes[0]
 
-            img_draw = cv2.imread("FaceDetector/example/img/3.8.jpg")
+            img_draw = cv2.imread("/FaceDetector/example/img/3.8.jpg")
             img_h, img_w = img_draw.shape[:2]
 
             for idx in range(len(filtered_single_multi_scale_bboxes['position'])):
