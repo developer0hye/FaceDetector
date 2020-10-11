@@ -12,20 +12,6 @@ import augmentation
 import tools
 
 
-def read_annotation_file(path):
-    with open(path, 'r') as label:
-        objects_information = []
-        for line in label:
-            line = line.split()
-            if len(line) == 5:  # 0: class, 1:x, 2:y, 3:w, 4:h
-                object_information = []
-                for data in line:
-                    object_information.append(float(data))
-                objects_information.append(object_information)
-        objects_information = np.asarray(objects_information).astype(np.float32)
-        return objects_information
-
-
 class DatasetReader(Dataset):
     def __init__(self,
                  dataset_path,
