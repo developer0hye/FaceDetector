@@ -33,8 +33,10 @@ I set the input image size of the network to 384x384 via median width and height
 - Median Width: 83
 - Median Height: 108
 
-
 #### Visualizaiton
+The size of objects is normalized to the range [0, 384] for visualization.
+
+The X axis means the width of object, and Y axis means the height of object.
 
 
 ## Network
