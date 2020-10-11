@@ -8,6 +8,7 @@ import rexnetv1
 import tools
 import torchvision.transforms as transforms
 
+
 class Conv_BN_LeakyReLU(nn.Module):
     def __init__(self,
                  in_channels,
@@ -95,35 +96,38 @@ class LightWeightFaceDetector(nn.Module):
                 self.detection_layers.append(Detection(anchor_wh=anchor_wh))
 
         self.pyramid_s32 = Conv_BN_LeakyReLU(1280, 256, 1)
-        #self.refine_s32 = Conv_BN_LeakyReLU(256, 256, 3, 1)
+        # self.refine_s32 = Conv_BN_LeakyReLU(256, 256, 3, 1)
 
         self.refine_s16 = Conv_BN_LeakyReLU(128, 256, 3, 1)
-        #self.pyramid_s16 = Conv_BN_LeakyReLU(256, 256, 3, 1)
-        
+        # self.pyramid_s16 = Conv_BN_LeakyReLU(256, 256, 3, 1)
+
         self.refine_s8 = Conv_BN_LeakyReLU(61, 256, 3, 1)
-       # self.pyramid_s8 = Conv_BN_LeakyReLU(256, 256, 3, 1)
-        
+        # self.pyramid_s8 = Conv_BN_LeakyReLU(256, 256, 3, 1)
 
         self.upsample = nn.Upsample(scale_factor=(2, 2), mode='nearest')
-        
-        #I used shared convolution layers to reduce the number of parameters.
+
+        # I used shared convolution layers to reduce the number of parameters.
         self.bbox_regression = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            nn.Conv2d(256, 4, 1))
+                                             Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                             nn.Conv2d(256, 4, 1))
 
+        # classify foreground/background
         self.bbox_classification = nn.ModuleList([nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            nn.Conv2d(256, 1+self.num_classes, 1)),
-                                            nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            nn.Conv2d(256, 1+self.num_classes, 1)),
-                                            nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            Conv_BN_LeakyReLU(256, 256, 3, 1),
-                                            nn.Conv2d(256, 1+self.num_classes, 1))])
-        
-        #To use shared convolution layers for classification significantly dropped the performance.
-        #So I mixed shared convolution layers(head) and not shared convolution layers(tail) for classification.
+                                                                Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                                nn.Conv2d(256, 1, 1)),
+                                                  nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                                Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                                nn.Conv2d(256, 1, 1)),
+                                                  nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                                Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                                nn.Conv2d(256, 1, 1))])
 
+        self.face_expression_classifier = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
+                                                        Conv_BN_LeakyReLU(256, 1024, 1, 0),
+                                                        nn.Conv2d(1024, self.num_classes, 1))
+
+        # To use shared convolution layers for classification significantly dropped the performance.
+        # So I mixed shared convolution layers(head) and not shared convolution layers(tail) for classification.
 
     def forward(self, x):
         input_img_h, input_img_w = x.shape[2:]
@@ -137,8 +141,8 @@ class LightWeightFaceDetector(nn.Module):
         C5 = multi_scale_features[-1]
         C4 = multi_scale_features[-2]
         C3 = multi_scale_features[-3]
-        
-        #generate feature pyramid
+
+        # generate feature pyramid
         P5 = self.pyramid_s32(C5)
         P4 = self.refine_s16(C4) + self.upsample(P5)
         P3 = self.refine_s8(C3) + self.upsample(P4)
@@ -146,12 +150,14 @@ class LightWeightFaceDetector(nn.Module):
         batch_multi_scale_raw_bboxes = []  # for training
         batch_multi_scale_bboxes = []  # for inference
 
-        for P, detection_layer, bbox_classification in zip([P3, P4, P5], self.detection_layers, self.bbox_classification):
+        for P, detection_layer, bbox_classification in zip([P3, P4, P5], self.detection_layers,
+                                                           self.bbox_classification):
             P_bbox_regression = self.bbox_regression(P)
-            P_classification = bbox_classification(P)
-            P = torch.cat([P_bbox_regression, P_classification], dim=1)
-            
-            #generate features for training and inference bounding boxes
+            P_bbox_classification = bbox_classification(P)
+            P_face_expression_classification = self.face_expression_classifier(P)
+            P = torch.cat([P_bbox_regression, P_bbox_classification, P_face_expression_classification], dim=1)
+
+            # generate features for training and inference bounding boxes
             batch_single_scale_raw_bboxes, batch_single_scale_bboxes = detection_layer(P,
                                                                                        input_img_w,
                                                                                        input_img_h)
@@ -330,11 +336,11 @@ if __name__ == '__main__':
     for epoch in range(epochs):
         print("epoch: ", epoch)
         model.train()
-        
+
         if epoch == 10:
             for p in model.backbone.parameters():
                 p.requires_grad = True
-        
+
         for img, batch_target_bboxes, inds in data_loader:
             iteration += 1
             img = img.cuda()
@@ -369,8 +375,8 @@ if __name__ == '__main__':
             break
 
         if epoch % 10 != 0:
-          continue
-        
+            continue
+
         model.eval()
         with torch.no_grad():
             # https://discuss.pytorch.org/t/performance-highly-degraded-when-eval-is-activated-in-the-test-phase/3323/43
@@ -410,6 +416,6 @@ if __name__ == '__main__':
                 cv2.rectangle(img=img_draw, pt1=(l, t), pt2=(r, b), color=(0, 255, 0))
 
                 print(bbox)
-            #cv2.imshow('img', img_draw)
-            cv2.imwrite('img'+str(epoch)+'.png', img_draw)
+            # cv2.imshow('img', img_draw)
+            cv2.imwrite('img' + str(epoch) + '.png', img_draw)
             print(len(filtered_single_multi_scale_bboxes['position']))
