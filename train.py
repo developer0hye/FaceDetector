@@ -137,15 +137,8 @@ def train(model, device):
         lr_scheduler.step()
 
         if epoch >= 50:
-          chkpt = {'epoch': epoch + 1,
-                  'iteration': iteration,
-                  'model': model.state_dict(),
-                  'optimizer': optimizer.state_dict()}
-
           print('Saving state, epoch:', epoch + 1)
-
-          
-          torch.save(chkpt,
+          torch.save(model.state_dict(),
                       args.save_folder + '/' + 'nota_face_detector' + '_' +
                       str(epoch + 1) + '.pth')
 
