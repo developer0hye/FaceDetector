@@ -42,3 +42,8 @@ I set the input image size of the network to 384x384 via median width and height
 ### Backbone Network
 I adopted RexNet as backbone network to design a lightweight detector.
 
+컨볼루션 레이어 공유
+bbox regresssion 은 공유해도 잘됨
+classification 
+
+
