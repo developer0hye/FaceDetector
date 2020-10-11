@@ -42,6 +42,13 @@ I set the input image size of the network to 384x384 via median width and height
 ### Backbone Network
 I adopted RexNet as backbone network to design a lightweight detector.
 
-- Main Architecture: Feature Pyramid Network + YOLOv3
+### Main Architecture
+Feature Pyramid Network + YOLOv3(anchor based detection method)
+
+I referenced the feature pyramid network to design a scale robust network.
+
+#### Anchors
+Used 3 anchor boxes
+
 
 
