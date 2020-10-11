@@ -136,7 +136,7 @@ def train(model, device):
 
         lr_scheduler.step()
 
-        if epoch >= 50:
+        if epoch >= 10:
           print('Saving state, epoch:', epoch + 1)
           torch.save(model.state_dict(),
                       args.save_folder + '/' + 'nota_face_detector' + '_' +
