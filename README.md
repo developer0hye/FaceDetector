@@ -54,6 +54,7 @@ python train.py
 ```
 
 ### Test
+[trained weights download](https://drive.google.com/file/d/1lfaSXKLqf0lxgLnGXRJIrLBNM7RDF8an/view?usp=sharing)
 ```
 python test.py --weights best_nota_face_detector_200.pth
 ```
