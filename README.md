@@ -35,14 +35,17 @@ I adopted RexNet as backbone network to design a lightweight detector.
 ### Main Architecture
 Feature Pyramid Network + YOLOv3(anchor based detection method)
 
-I referenced the feature pyramid network to design a scale robust network.
+I found that the state of the art methods for the face detection exploited the architecture of the feature pyramid network.
+
+[Pyramid Box A Context-assisted Single Shot Face Detector](https://arxiv.org/pdf/1803.07737v2.pdf)
+
+So I referenced the architecture of feature pyramid network to design a scale robust network.
+
+#### Anchor Boxes
+Used 3 anchor boxes
 
 ### Model Size
-
 42.8 MB
-
-#### Anchors
-Used 3 anchor boxes
 
 ## Training
 - Epochs: 200
