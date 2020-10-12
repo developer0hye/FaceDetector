@@ -27,18 +27,6 @@ Standard Deviation: [0.23505978, 0.23163822, 0.233239]
 
 I set the input image size of the network to 384x384 via median width and height.
 
-### Objects Size
-- Width Range: [18, 3668]
-- Height Range: [25, 3668]
-- Median Width: 83
-- Median Height: 108
-
-#### Visualizaiton
-The size of objects is normalized to the range [0, 384] for visualization.
-
-The X axis means the width of object, and Y axis means the height of object.
-
-
 ## Network
 
 ### Backbone Network
@@ -57,6 +45,4 @@ Used 3 anchor boxes
 - Batch Size: 32
 - Optimizer: SGD with Momentum
 - Augmentation: Random Translation, Random Cropping, Random Scaling(x0.5 to x2.0)
-
-
 
