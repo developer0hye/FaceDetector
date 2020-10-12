@@ -46,3 +46,17 @@ Used 3 anchor boxes
 - Optimizer: SGD with Momentum
 - Augmentation: Random Translation, Random Cropping, Random Scaling(x0.5 to x2.0)
 
+## Commands
+
+### Training
+```
+python train.py
+```
+
+### Test
+```
+python test.py --weights best_nota_face_detector_200.pth
+```
+
+
+
