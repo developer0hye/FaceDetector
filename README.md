@@ -52,5 +52,11 @@ I referenced the feature pyramid network to design a scale robust network.
 #### Anchors
 Used 3 anchor boxes
 
+## Training
+- Epochs: 200
+- Batch Size: 32
+- Optimizer: SGD with Momentum
+- Augmentation: Random Translation, Random Cropping, Random Scaling(x0.5 to x2.0)
+
 
 
