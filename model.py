@@ -106,12 +106,13 @@ class LightWeightFaceDetector(nn.Module):
 
         self.upsample = nn.Upsample(scale_factor=(2, 2), mode='nearest')
 
-        # I used shared convolution layers to reduce the number of parameters.
+        # use shared convolution layers for bounding boxes regression to reduce the number of parameters.
         self.bbox_regression = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                              Conv_BN_LeakyReLU(256, 256, 3, 1),
                                              nn.Conv2d(256, 4, 1))
 
         # classify foreground/background
+        # To use shared convolution layers for foreground and background classification significantly dropped the performance.
         self.bbox_classification = nn.ModuleList([nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                                 Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                                 nn.Conv2d(256, 1, 1)),
@@ -121,13 +122,13 @@ class LightWeightFaceDetector(nn.Module):
                                                   nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                                 Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                                 nn.Conv2d(256, 1, 1))])
-
+        
+        #use shared convolution layers for face expression recognition to reduce the number of parameters.
         self.face_expression_classifier = nn.Sequential(Conv_BN_LeakyReLU(256, 256, 3, 1),
                                                         Conv_BN_LeakyReLU(256, 1024, 1, 0),
                                                         nn.Conv2d(1024, self.num_classes, 1))
 
-        # To use shared convolution layers for classification significantly dropped the performance.
-        # So I mixed shared convolution layers(head) and not shared convolution layers(tail) for classification.
+        
 
     def forward(self, x):
         input_img_h, input_img_w = x.shape[2:]
