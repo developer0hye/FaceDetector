@@ -37,6 +37,10 @@ Feature Pyramid Network + YOLOv3(anchor based detection method)
 
 I referenced the feature pyramid network to design a scale robust network.
 
+### Model Size
+
+42.8 MB
+
 #### Anchors
 Used 3 anchor boxes
 
@@ -60,6 +64,21 @@ python test.py --weights best_nota_face_detector_200.pth
 ```
 
 ### Results
+
+<img src="./figures/1.JPG" width="80%">
+<img src="./figures/2.jpg" width="80%">
+<img src="./figures/3.JPG" width="80%">
+<img src="./figures/4.JPG" width="80%">
+<img src="./figures/5.jpg" width="80%">
+<img src="./figures/6.jpg" width="80%">
+<img src="./figures/7.JPG" width="80%">
+<img src="./figures/8.jpg" width="80%">
+<img src="./figures/9.jpg" width="80%">
+<img src="./figures/10.JPG" width="80%">
+<img src="./figures/11.jpg" width="80%">
+<img src="./figures/12.jpg" width="80%">
+
+
 
 
 
