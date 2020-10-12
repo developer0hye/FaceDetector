@@ -103,7 +103,7 @@ def test(model, device):
                 img = cv2.imread(test_dataset.img_files_path[index])
                 img_h, img_w = img.shape[:2]
 
-                pad = 40 #출력되는 글자가 잘리는 문제를 완화하기위하여 패딩
+                pad = 80 #출력되는 글자가 잘리는 문제를 완화하기위하여 패딩
                 img = cv2.copyMakeBorder(img, pad, pad, pad, pad, cv2.BORDER_CONSTANT)
 
                 for idx in range(len(single_bboxes['position'])):
@@ -123,7 +123,7 @@ def test(model, device):
 
                     cv2.rectangle(img=img, pt1=(l, t), pt2=(r, b), color=(0, 255, 0))
                     cv2.putText(img, class_mapping_table[class_idx], (l, t), cv2.FONT_HERSHEY_SIMPLEX,
-                                1, (0, 255, 0), 1, cv2.LINE_AA)
+                                1, (0, 255, 0), 2, cv2.LINE_AA)
 
                 cv2.imwrite(os.path.join(args.save_folder, Path(test_dataset.img_files_path[index]).name), img)
                 cv2.imshow('img', img)
